@@ -1,5 +1,5 @@
 export const config = {
-    CURRENT_VERSION: '2.0.15',
-    NEXT_VERSION: '2.1.0',
+    CURRENT_VERSION: '2.x',
+    NEXT_VERSION: '3.x',
     PROJECT: 'acud',
 }

@@ -6,3 +6,5 @@ dist
 screenshots/
 report.txt
 diffReport/
+
+.yarn/cache

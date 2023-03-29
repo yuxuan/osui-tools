@@ -4,10 +4,16 @@ import template from 'lodash.template';
 import forEach from 'lodash.foreach';
 import {config} from './config'
 
+const remote = Boolean(process.argv[2] === 'false' ? false : true);
+console.log('remote', remote, process.argv[2]);
+const targetComponents = Boolean(process.argv[3] === 'false' ? false: true);
+console.log('targetComponents', targetComponents)
+
 const BCE_HOST = `https://baidu-ee-fe-sites.cdn.bcebos.com/${config.PROJECT}@diffReport@${config.NEXT_VERSION}/screenshots`;
 
 const SCREENSHOT_PATH = path.join('./', 'screenshots');
 const STORED_COMPONENTS_LIST = path.join(__dirname, '../storedComponentList.json');
+const TARGET_COMPONENTS_LIST = path.join(__dirname, '../targetComponentsList.json');
 
 const compiled = template(`
 <html>
@@ -35,15 +41,12 @@ const compiled = template(`
 { 'imports': { 'forEach': forEach } }
 );
 
-const remote = process.argv[2];
-
-console.log(remote);
 
 const getUrl = (host: string, version: string, component: string) => {
     return `${host}/${version}/${component}.png`
 }
 
-const components = require(STORED_COMPONENTS_LIST).map(
+const components = require(targetComponents ? TARGET_COMPONENTS_LIST : STORED_COMPONENTS_LIST).map(
     (component: string) => {
         const host = remote ? BCE_HOST : SCREENSHOT_PATH;
         return {

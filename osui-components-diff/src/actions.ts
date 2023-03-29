@@ -1,27 +1,27 @@
-import puppeteer from 'puppeteer';
+import {Page, Frame} from 'puppeteer-core';
 
-export declare type Action = (page: puppeteer.Page | puppeteer.Frame) => Promise<void>;
+export declare type Action = (page: Page | Frame) => Promise<void>;
 
 export interface Actions {
     [key: string]: Action;
 }
-const select: Action = async (page: puppeteer.Page | puppeteer.Frame) => {
+const select: Action = async (page: Page | Frame) => {
     await page.click('.osui-select');
 };
 
-const drawer: Action = async (page: puppeteer.Page | puppeteer.Frame) => {
+const drawer: Action = async (page: Page | Frame) => {
     await page.click('.osui-button');
     // wait 1 second
     await new Promise(resolve => setTimeout(resolve, 1000));
 };
 
-const modal: Action = async (page: puppeteer.Page | puppeteer.Frame) => {
+const modal: Action = async (page: Page | Frame) => {
     await page.click('.osui-button');
     // wait 1 second
     await new Promise(resolve => setTimeout(resolve, 1000));
 };
 
-const cascader: Action = async (page: puppeteer.Page | puppeteer.Frame) => {
+const cascader: Action = async (page: Page | Frame) => {
     await page.click('.osui-cascader');
     await new Promise(resolve => setTimeout(resolve, 500));
     await page.click('.ant-cascader-menu .ant-cascader-menu-item');

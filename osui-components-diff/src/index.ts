@@ -4,19 +4,24 @@ import fs from 'fs';
 import process from 'process';
 import childProcess from 'child_process';
 import isEmpty from 'lodash.isempty';
-import puppeteer from 'puppeteer';
+import puppeteer, {Browser, Page, Frame} from 'puppeteer-core';
 import mkdirp from 'mkdirp';
 import actions, {Action} from './actions';
 import {config} from './config';
 
-let CURRENT_URL = `http://eefe.baidu-int.com/sites/${config.PROJECT}@${config.CURRENT_VERSION}`;
-let NEXT_URL = `http://eefe.baidu-int.com/sites/${config.PROJECT}@${config.NEXT_VERSION}`;
+const args = process.argv;
 
+const CURRENT_URL = args[2] || `http://localhost:8081`;
+const NEXT_URL = args[3] || `http://localhost:8080`;
+const TARGET_COMPONENT = args[4];
+
+console.log(CURRENT_URL, NEXT_URL, TARGET_COMPONENT);
 
 const BASE_DIR = path.resolve(__dirname, '..');
 const SCREENSHOT_PATH = path.resolve(BASE_DIR, 'screenshots');
 const SCREENSHOT_RESULT_PATH = path.resolve(BASE_DIR, 'screenshots', 'result');
 const STORED_COMPONENTS_LIST = path.resolve(BASE_DIR, 'storedComponentList.json');
+const TARGET_COMPONENTS_LIST = path.resolve(BASE_DIR, 'targetComponentsList.json');
 
 type ComponentName = string;
 
@@ -32,11 +37,15 @@ const getScreenshotsComponentDiffPath = (component: ComponentName) => (
     path.join(SCREENSHOT_RESULT_PATH, `${component}.png`)
 );
 
-let browser: puppeteer.Browser;
-let page: puppeteer.Page;
+let browser: Browser;
+let page: Page;
 
 const puppeteerPrepare = async () => {
-    browser = await puppeteer.launch();
+    browser = await puppeteer.launch({
+        executablePath: '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome',
+        headless: true,
+        args: ['--start-maximized']
+    });
     page = await browser.newPage();
     await page.setViewport({
         width: 1095,
@@ -102,13 +111,17 @@ const demoListPrepare = async (): Promise<Components> => {
     return bindActions(components);
 };
 
+let maximumWidth = 0;
+let maximumHeight = 0;
+
 const screenshot = async (component: ComponentName, url: string, version: string) => {
     console.log(url);
+
     await page.goto(url, {
         waitUntil: 'networkidle0',
     });
 
-    const frame: puppeteer.Frame|undefined = page.frames().find(frame => frame.name() === 'storybook-preview-iframe');
+    const frame: Frame|undefined = page.frames().find(frame => frame.name() === 'storybook-preview-iframe');
     if (!frame) {
         throw Error('Cannot find: storybook-preview-iframe');
     }
@@ -132,13 +145,19 @@ const screenshot = async (component: ComponentName, url: string, version: string
 
     const boundingBox = await element.boundingBox();
     const pngPath = getScreenshotsComponentPath(version, component);
+
+    maximumWidth = boundingBox!.width > maximumWidth ?  boundingBox!.width: maximumWidth
+    maximumHeight = boundingBox!.height > maximumHeight ?  boundingBox!.height: maximumHeight
+
+    console.log(maximumWidth, maximumHeight);
+
     await element.screenshot({
         path: pngPath,
         clip: {
             x: boundingBox!.x,
             y: boundingBox!.y,
-            width: Math.min(boundingBox!.width, page.viewport().width),
-            height: Math.min(boundingBox!.height, page.viewport().height),
+            width: boundingBox!.width,
+            height: 1162,
         },
     });
 };
@@ -178,14 +197,14 @@ const main = async () => {
     await projectPrepare();
     await puppeteerPrepare();
     const components = await demoListPrepare();
-    const targetComponent = process.argv[2];
-    if (targetComponent) {
-        await screenshots(Object.keys(components).filter(name => name.includes(targetComponent)))
+    if (TARGET_COMPONENT) {
+        const targetComponents = Object.keys(components).filter(name => name.includes(TARGET_COMPONENT))
+        fs.writeFileSync(TARGET_COMPONENTS_LIST, JSON.stringify(targetComponents), {encoding: 'utf-8'});
+        await screenshots(targetComponents)
     }
     else {
         await screenshots(Object.keys(components))
     }
-
     browser.close();
 };
 
