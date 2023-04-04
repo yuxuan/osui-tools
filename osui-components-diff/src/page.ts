@@ -60,7 +60,13 @@ const components = require(targetComponents ? TARGET_COMPONENTS_LIST : STORED_CO
     }
 );
 
-const html = compiled({ 'components': components })
-fs.writeFileSync('./diffReport/index.html', html, {encoding: 'utf-8'});
+const html = compiled({ 'components': components });
+
+if (targetComponents) {
+    fs.writeFileSync('./diffReort/component.html', html, {encoding: 'utf-8'});
+}
+else {
+    fs.writeFileSync('./diffReport/index.html', html, {encoding: 'utf-8'});
+}
 
 console.log('DONE');
